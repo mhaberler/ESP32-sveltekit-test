@@ -1,0 +1,959 @@
+diff lib/PsychicHttp/src/PsychicClient.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicClient.cpp
+5,10c5,10
+< PsychicClient::PsychicClient(httpd_handle_t server, int socket) : _server(server),
+<                                                                   _socket(socket),
+<                                                                   _friend(NULL),
+<                                                                   isNew(false)
+< {
+< }
+---
+> PsychicClient::PsychicClient(httpd_handle_t server, int socket) :
+>   _server(server),
+>   _socket(socket),
+>   _friend(NULL),
+>   isNew(false)
+> {}
+12,13c12
+< PsychicClient::~PsychicClient()
+< {
+---
+> PsychicClient::~PsychicClient() {
+16,17c15
+< httpd_handle_t PsychicClient::server()
+< {
+---
+> httpd_handle_t PsychicClient::server() {
+21,22c19
+< int PsychicClient::socket()
+< {
+---
+> int PsychicClient::socket() {
+30c27
+<   // PsychicHttpServer::closeCallback(_server, _socket); // call this immediately so the client is taken off the list.
+---
+>   //PsychicHttpServer::closeCallback(_server, _socket); // call this immediately so the client is taken off the list.
+37c34
+<   IPAddress address(0, 0, 0, 0);
+---
+>   IPAddress address(0,0,0,0);
+40c37
+<   struct sockaddr_in6 addr; // esp_http_server uses IPv6 addressing
+---
+>   struct sockaddr_in6 addr;   // esp_http_server uses IPv6 addressing
+43,44c40
+<   if (getsockname(_socket, (struct sockaddr *)&addr, &addr_size) < 0)
+<   {
+---
+>   if (getsockname(_socket, (struct sockaddr *)&addr, &addr_size) < 0) {
+59c55
+<   IPAddress address(0, 0, 0, 0);
+---
+>   IPAddress address(0,0,0,0);
+62c58
+<   struct sockaddr_in6 addr; // esp_http_server uses IPv6 addressing
+---
+>   struct sockaddr_in6 addr;   // esp_http_server uses IPv6 addressing
+65,66c61
+<   if (getpeername(_socket, (struct sockaddr *)&addr, &addr_size) < 0)
+<   {
+---
+>   if (getpeername(_socket, (struct sockaddr *)&addr, &addr_size) < 0) {
+73c68
+<   ESP_LOGV(PH_TAG, "Client Remote IP => %s", ipstr);
+---
+>   ESP_LOGI(PH_TAG, "Client Remote IP => %s", ipstr);
+diff lib/PsychicHttp/src/PsychicHandler.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicHandler.cpp
+10c10,11
+<   _authFailMsg("")
+---
+>   _authFailMsg(""),
+>   _subprotocol("")
+26a28,34
+> }
+> 
+> void PsychicHandler::setSubprotocol(const String& subprotocol) {
+>     this->_subprotocol = subprotocol;
+> }
+> const char* PsychicHandler::getSubprotocol() const {
+>     return _subprotocol.c_str();
+diff lib/PsychicHttp/src/PsychicHandler.h .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicHandler.h
+26a27,28
+>     String _subprotocol;
+> 
+31c33
+<     ~PsychicHandler();
+---
+>     virtual ~PsychicHandler();
+40a43,45
+> 
+>     void setSubprotocol(const String& subprotocol);
+>     const char* getSubprotocol() const;
+diff lib/PsychicHttp/src/PsychicHttpServer.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicHttpServer.cpp
+144c144,145
+<     .is_websocket = handler->isWebSocket()
+---
+>     .is_websocket = handler->isWebSocket(),
+>     .supported_subprotocol = handler->getSubprotocol()
+diff lib/PsychicHttp/src/PsychicHttpServer.h .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicHttpServer.h
+28c28
+<     ~PsychicHttpServer();
+---
+>     virtual ~PsychicHttpServer();
+diff lib/PsychicHttp/src/PsychicHttpsServer.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicHttpsServer.cpp
+2a3,4
+> #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+> 
+28,29c30,38
+<   this->ssl_config.cacert_pem = (uint8_t *)cert;
+<   this->ssl_config.cacert_len = strlen(cert)+1;
+---
+> 
+> #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 2)
+>     this->ssl_config.servercert = (uint8_t *)cert;
+>     this->ssl_config.servercert_len = strlen(cert)+1;
+> #else
+>     this->ssl_config.cacert_pem = (uint8_t *)cert;
+>     this->ssl_config.cacert_len = strlen(cert)+1;
+> #endif
+> 
+50c59,61
+< }
+\ No newline at end of file
+---
+> }
+> 
+> #endif // CONFIG_ESP_HTTPS_SERVER_ENABLE
+\ No newline at end of file
+diff lib/PsychicHttp/src/PsychicHttpsServer.h .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicHttpsServer.h
+3a4,5
+> #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+> 
+7d8
+< 
+32c33,35
+< #endif // PsychicHttpsServer_h
+\ No newline at end of file
+---
+> #endif // PsychicHttpsServer_h
+> 
+> #endif // CONFIG_ESP_HTTPS_SERVER_ENABLE
+\ No newline at end of file
+diff lib/PsychicHttp/src/PsychicJson.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicJson.cpp
+4,12c4,13
+< PsychicJsonResponse::PsychicJsonResponse(PsychicRequest *request, bool isArray, size_t maxJsonBufferSize) : PsychicResponse(request),
+<                                                                                                             _jsonBuffer(maxJsonBufferSize)
+< {
+<   setContentType(JSON_MIMETYPE);
+<   if (isArray)
+<     _root = _jsonBuffer.createNestedArray();
+<   else
+<     _root = _jsonBuffer.createNestedObject();
+< }
+---
+>   PsychicJsonResponse::PsychicJsonResponse(PsychicRequest *request, bool isArray, size_t maxJsonBufferSize) :
+>     PsychicResponse(request),
+>     _jsonBuffer(maxJsonBufferSize)
+>   {
+>     setContentType(JSON_MIMETYPE);
+>     if (isArray)
+>       _root = _jsonBuffer.createNestedArray();
+>     else
+>       _root = _jsonBuffer.createNestedObject();
+>   }
+14,21c15,22
+< PsychicJsonResponse::PsychicJsonResponse(PsychicRequest *request, bool isArray) : PsychicResponse(request)
+< {
+<   setContentType(JSON_MIMETYPE);
+<   if (isArray)
+<     _root = _jsonBuffer.add<JsonArray>();
+<   else
+<     _root = _jsonBuffer.add<JsonObject>();
+< }
+---
+>   PsychicJsonResponse::PsychicJsonResponse(PsychicRequest *request, bool isArray) : PsychicResponse(request)
+>   {
+>     setContentType(JSON_MIMETYPE);
+>     if (isArray)
+>       _root = _jsonBuffer.add<JsonArray>();
+>     else
+>       _root = _jsonBuffer.add<JsonObject>();
+>   }
+38c39
+<   // DUMP(length);
+---
+>   DUMP(length);
+40c41
+<   // how big of a buffer do we want?
+---
+>   //how big of a buffer do we want?
+42c43
+<     buffer_size = length + 1;
+---
+>     buffer_size = length+1;
+46c47
+<   // DUMP(buffer_size);
+---
+>   DUMP(buffer_size);
+49,50c50
+<   if (buffer == NULL)
+<   {
+---
+>   if (buffer == NULL) {
+55c55
+<   // send it in one shot or no?
+---
+>   //send it in one shot or no?
+58c58
+<     // TRACE();
+---
+>     TRACE();
+69c69
+<     // helper class that acts as a stream to print chunked responses
+---
+>     //helper class that acts as a stream to print chunked responses
+72c72
+<     // keep our headers
+---
+>     //keep our headers
+77c77
+<     // send the last bits
+---
+>     //send the last bits
+80c80
+<     // done with our chunked response too
+---
+>     //done with our chunked response too
+84c84
+<   // let the buffer go
+---
+>   //let the buffer go
+91,92c91,94
+< PsychicJsonHandler::PsychicJsonHandler(size_t maxJsonBufferSize) : _onRequest(NULL),
+<                                                                    _maxJsonBufferSize(maxJsonBufferSize){};
+---
+>   PsychicJsonHandler::PsychicJsonHandler(size_t maxJsonBufferSize) :
+>     _onRequest(NULL),
+>     _maxJsonBufferSize(maxJsonBufferSize)
+>   {};
+94,97c96,99
+< PsychicJsonHandler::PsychicJsonHandler(PsychicJsonRequestCallback onRequest, size_t maxJsonBufferSize) : _onRequest(onRequest),
+<                                                                                                          _maxJsonBufferSize(maxJsonBufferSize)
+< {
+< }
+---
+>   PsychicJsonHandler::PsychicJsonHandler(PsychicJsonRequestCallback onRequest, size_t maxJsonBufferSize) :
+>     _onRequest(onRequest),
+>     _maxJsonBufferSize(maxJsonBufferSize)
+>   {}
+99c101,103
+< PsychicJsonHandler::PsychicJsonHandler() : _onRequest(NULL){};
+---
+>   PsychicJsonHandler::PsychicJsonHandler() :
+>     _onRequest(NULL)
+>   {};
+101,103c105,107
+< PsychicJsonHandler::PsychicJsonHandler(PsychicJsonRequestCallback onRequest) : _onRequest(onRequest)
+< {
+< }
+---
+>   PsychicJsonHandler::PsychicJsonHandler(PsychicJsonRequestCallback onRequest) :
+>     _onRequest(onRequest)
+>   {}
+110c114
+<   // process basic stuff
+---
+>   //process basic stuff
+115,119c119,123
+< #ifdef ARDUINOJSON_6_COMPATIBILITY
+<     DynamicJsonDocument jsonBuffer(this->_maxJsonBufferSize);
+<     DeserializationError error = deserializeJson(jsonBuffer, request->body());
+<     if (error)
+<       return request->reply(400);
+---
+>     #ifdef ARDUINOJSON_6_COMPATIBILITY
+>       DynamicJsonDocument jsonBuffer(this->_maxJsonBufferSize);
+>       DeserializationError error = deserializeJson(jsonBuffer, request->body());
+>       if (error)
+>         return request->reply(400);
+121,126c125,130
+<     JsonVariant json = jsonBuffer.as<JsonVariant>();
+< #else
+<     JsonDocument jsonBuffer;
+<     DeserializationError error = deserializeJson(jsonBuffer, request->body());
+<     if (error)
+<       return request->reply(400);
+---
+>       JsonVariant json = jsonBuffer.as<JsonVariant>();
+>     #else
+>       JsonDocument jsonBuffer;
+>       DeserializationError error = deserializeJson(jsonBuffer, request->body());
+>       if (error)
+>         return request->reply(400);
+128,129c132,133
+<     JsonVariant json = jsonBuffer.as<JsonVariant>();
+< #endif
+---
+>       JsonVariant json = jsonBuffer.as<JsonVariant>();
+>     #endif
+diff lib/PsychicHttp/src/PsychicRequest.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicRequest.cpp
+5,10c5,12
+< PsychicRequest::PsychicRequest(PsychicHttpServer *server, httpd_req_t *req) : _server(server),
+<                                                                               _req(req),
+<                                                                               _method(HTTP_GET),
+<                                                                               _query(""),
+<                                                                               _body(""),
+<                                                                               _tempObject(NULL)
+---
+> 
+> PsychicRequest::PsychicRequest(PsychicHttpServer *server, httpd_req_t *req) :
+>   _server(server),
+>   _req(req),
+>   _method(HTTP_GET),
+>   _query(""),
+>   _body(""),
+>   _tempObject(NULL)
+12c14
+<   // load up our client.
+---
+>   //load up our client.
+15c17
+<   // handle our session data
+---
+>   //handle our session data
+24c26
+<   // callback for freeing the session later
+---
+>   //callback for freeing the session later
+27c29
+<   // load up some data
+---
+>   //load up some data
+33c35
+<   // temorary user object
+---
+>   //temorary user object
+37c39
+<   // our web parameters
+---
+>   //our web parameters
+39c41
+<     delete (param);
+---
+>     delete(param);
+47c49
+<     SessionData *session = (SessionData *)ctx;
+---
+>     SessionData *session = (SessionData*)ctx;
+52,53c54
+< PsychicHttpServer *PsychicRequest::server()
+< {
+---
+> PsychicHttpServer * PsychicRequest::server() {
+57,58c58
+< httpd_req_t *PsychicRequest::request()
+< {
+---
+> httpd_req_t * PsychicRequest::request() {
+62,63c62
+< PsychicClient *PsychicRequest::client()
+< {
+---
+> PsychicClient * PsychicRequest::client() {
+69c68
+<   // parse the content-disposition header
+---
+>   //parse the content-disposition header
+77c76
+<   // fall back to passed in query string
+---
+>   //fall back to passed in query string
+82c81
+<   // fall back to parsing it from url (useful for wildcard uploads)
+---
+>   //fall back to parsing it from url (useful for wildcard uploads)
+89c88
+<   // finally, unknown.
+---
+>   //finally, unknown.
+107c106
+<   else
+---
+>   else 
+113,114c112,113
+<     end = header.indexOf('"', start + 10);
+<     cd.filename = header.substring(start + 10, end - 1);
+---
+>     end = header.indexOf('"', start+10);
+>     cd.filename = header.substring(start+10, end-1);
+120,121c119,120
+<     end = header.indexOf('"', start + 6);
+<     cd.name = header.substring(start + 6, end - 1);
+---
+>     end = header.indexOf('"', start+6);
+>     cd.name = header.substring(start+6, end-1);
+136,137c135
+<   if (buf == NULL)
+<   {
+---
+>   if (buf == NULL) {
+142,143c140
+<   while (remaining > 0)
+<   {
+---
+>   while (remaining > 0) {
+146,147c143
+<     if (received == HTTPD_SOCK_ERR_TIMEOUT)
+<     {
+---
+>     if (received == HTTPD_SOCK_ERR_TIMEOUT) {
+150,151c146
+<     else if (received == HTTPD_SOCK_ERR_FAIL)
+<     {
+---
+>     else if (received == HTTPD_SOCK_ERR_FAIL) {
+167,168c162
+< http_method PsychicRequest::method()
+< {
+---
+> http_method PsychicRequest::method() {
+172,173c166
+< const String PsychicRequest::methodStr()
+< {
+---
+> const String PsychicRequest::methodStr() {
+177,178c170
+< const String PsychicRequest::path()
+< {
+---
+> const String PsychicRequest::path() {
+180c172
+<   if (index == -1)
+---
+>   if(index == -1)
+183c175
+<     return _uri.substring(0, index);
+---
+>     return _uri.substring(0, index);  
+186,187c178
+< const String &PsychicRequest::uri()
+< {
+---
+> const String& PsychicRequest::uri() {
+191,192c182
+< const String &PsychicRequest::query()
+< {
+---
+> const String& PsychicRequest::query() {
+205c195
+<   // if we've got one, allocated it and load it
+---
+>   //if we've got one, allocated it and load it
+208c198
+<     char header[header_len + 1];
+---
+>     char header[header_len+1];
+221,222c211
+< const String PsychicRequest::host()
+< {
+---
+> const String PsychicRequest::host() {
+226,227c215
+< const String PsychicRequest::contentType()
+< {
+---
+> const String PsychicRequest::contentType() {
+231,232c219
+< size_t PsychicRequest::contentLength()
+< {
+---
+> size_t PsychicRequest::contentLength() {
+236c223
+< const String &PsychicRequest::body()
+---
+> const String& PsychicRequest::body()
+243c230
+<   const String &type = this->contentType();
+---
+>   const String& type = this->contentType();
+263c250
+<   // did we get anything?
+---
+>   //did we get anything?
+278c265
+<   // did we get anything?
+---
+>   //did we get anything?
+287c274
+<   // did we get a query string?
+---
+>   //did we get a query string?
+291c278
+<     char query[query_len + 1];
+---
+>     char query[query_len+1];
+293d279
+<     _query = "";
+296c282
+<     // parse them.
+---
+>     //parse them.
+300c286
+<   // did we get form data as body?
+---
+>   //did we get form data as body?
+307,308c293
+< void PsychicRequest::_addParams(const String &params)
+< {
+---
+> void PsychicRequest::_addParams(const String& params){
+310,311c295
+<   while (start < params.length())
+<   {
+---
+>   while (start < params.length()){
+313,314c297
+<     if (end < 0)
+<       end = params.length();
+---
+>     if (end < 0) end = params.length();
+316,317c299
+<     if (equal < 0 || equal > end)
+<       equal = end;
+---
+>     if (equal < 0 || equal > end) equal = end;
+325c307
+< PsychicWebParameter *PsychicRequest::addParam(const String &name, const String &value, bool decode)
+---
+> PsychicWebParameter * PsychicRequest::addParam(const String &name, const String &value, bool decode)
+333,334c315
+< PsychicWebParameter *PsychicRequest::addParam(PsychicWebParameter *param)
+< {
+---
+> PsychicWebParameter * PsychicRequest::addParam(PsychicWebParameter *param) {
+344c325
+< PsychicWebParameter *PsychicRequest::getParam(const char *key)
+---
+> PsychicWebParameter * PsychicRequest::getParam(const char *key)
+353c334
+< bool PsychicRequest::hasSessionKey(const String &key)
+---
+> bool PsychicRequest::hasSessionKey(const String& key)
+358c339
+< const String PsychicRequest::getSessionKey(const String &key)
+---
+> const String PsychicRequest::getSessionKey(const String& key)
+367c348
+< void PsychicRequest::setSessionKey(const String &key, const String &value)
+---
+> void PsychicRequest::setSessionKey(const String& key, const String& value)
+372,373c353
+< static const String md5str(const String &in)
+< {
+---
+> static const String md5str(const String &in){
+381c361
+< bool PsychicRequest::authenticate(const char *username, const char *password)
+---
+> bool PsychicRequest::authenticate(const char * username, const char * password)
+383c363
+<   if (hasHeader("Authorization"))
+---
+>   if(hasHeader("Authorization"))
+386,387c366
+<     if (authReq.startsWith("Basic"))
+<     {
+---
+>     if(authReq.startsWith("Basic")){
+390c369
+<       char toencodeLen = strlen(username) + strlen(password) + 1;
+---
+>       char toencodeLen = strlen(username)+strlen(password)+1;
+392,393c371
+<       if (toencode == NULL)
+<       {
+---
+>       if(toencode == NULL){
+397,399c375,376
+<       char *encoded = new char[base64_encode_expected_len(toencodeLen) + 1];
+<       if (encoded == NULL)
+<       {
+---
+>       char *encoded = new char[base64_encode_expected_len(toencodeLen)+1];
+>       if(encoded == NULL){
+405,406c382
+<       if (base64_encode_chars(toencode, toencodeLen, encoded) > 0 && authReq.equalsConstantTime(encoded))
+<       {
+---
+>       if(base64_encode_chars(toencode, toencodeLen, encoded) > 0 && authReq.equalsConstantTime(encoded)) {
+415c391
+<     else if (authReq.startsWith(F("Digest")))
+---
+>     else if(authReq.startsWith(F("Digest")))
+418,420c394,395
+<       String _username = _extractParam(authReq, F("username=\""), '\"');
+<       if (!_username.length() || _username != String(username))
+<       {
+---
+>       String _username = _extractParam(authReq,F("username=\""),'\"');
+>       if(!_username.length() || _username != String(username)) {
+425,429c400,404
+<       String _realm = _extractParam(authReq, F("realm=\""), '\"');
+<       String _nonce = _extractParam(authReq, F("nonce=\""), '\"');
+<       String _uri = _extractParam(authReq, F("uri=\""), '\"');
+<       String _resp = _extractParam(authReq, F("response=\""), '\"');
+<       String _opaque = _extractParam(authReq, F("opaque=\""), '\"');
+---
+>       String _realm    = _extractParam(authReq, F("realm=\""),'\"');
+>       String _nonce    = _extractParam(authReq, F("nonce=\""),'\"');
+>       String _uri      = _extractParam(authReq, F("uri=\""),'\"');
+>       String _resp     = _extractParam(authReq, F("response=\""),'\"');
+>       String _opaque   = _extractParam(authReq, F("opaque=\""),'\"');
+431,432c406
+<       if ((!_realm.length()) || (!_nonce.length()) || (!_uri.length()) || (!_resp.length()) || (!_opaque.length()))
+<       {
+---
+>       if((!_realm.length()) || (!_nonce.length()) || (!_uri.length()) || (!_resp.length()) || (!_opaque.length())) {
+436c410
+<       if ((_opaque != this->getSessionKey("opaque")) || (_nonce != this->getSessionKey("nonce")) || (_realm != this->getSessionKey("realm")))
+---
+>       if((_opaque != this->getSessionKey("opaque")) || (_nonce != this->getSessionKey("nonce")) || (_realm != this->getSessionKey("realm")))
+448,450c422,423
+<       String _nc, _cnonce;
+<       if (authReq.indexOf("qop=auth") != -1 || authReq.indexOf("qop=\"auth\"") != -1)
+<       {
+---
+>       String _nc,_cnonce;
+>       if(authReq.indexOf("qop=auth") != -1 || authReq.indexOf("qop=\"auth\"") != -1) {
+452c425
+<         _cnonce = _extractParam(authReq, F("cnonce=\""), '\"');
+---
+>         _cnonce = _extractParam(authReq, F("cnonce=\""),'\"');
+455c428
+<       ESP_LOGD(PH_TAG, "Hash of user:realm:pass=%s", _H1);
+---
+>       ESP_LOGD(PH_TAG, "Hash of user:realm:pass=%s", _H1.c_str());
+457,459c430,439
+<       if (_method == HTTP_GET)
+<       {
+<         _H2 = md5str(String(F("GET:")) + _uri);
+---
+>       if(_method == HTTP_GET){
+>           _H2 = md5str(String(F("GET:")) + _uri);
+>       }else if(_method == HTTP_POST){
+>           _H2 = md5str(String(F("POST:")) + _uri);
+>       }else if(_method == HTTP_PUT){
+>           _H2 = md5str(String(F("PUT:")) + _uri);
+>       }else if(_method == HTTP_DELETE){
+>           _H2 = md5str(String(F("DELETE:")) + _uri);
+>       }else{
+>           _H2 = md5str(String(F("GET:")) + _uri);
+461,477c441
+<       else if (_method == HTTP_POST)
+<       {
+<         _H2 = md5str(String(F("POST:")) + _uri);
+<       }
+<       else if (_method == HTTP_PUT)
+<       {
+<         _H2 = md5str(String(F("PUT:")) + _uri);
+<       }
+<       else if (_method == HTTP_DELETE)
+<       {
+<         _H2 = md5str(String(F("DELETE:")) + _uri);
+<       }
+<       else
+<       {
+<         _H2 = md5str(String(F("GET:")) + _uri);
+<       }
+<       ESP_LOGD(PH_TAG, "Hash of GET:uri=%s", _H2);
+---
+>       ESP_LOGD(PH_TAG, "Hash of GET:uri=%s", _H2.c_str());
+479,481c443,446
+<       if (authReq.indexOf("qop=auth") != -1 || authReq.indexOf("qop=\"auth\"") != -1)
+<       {
+<         _responsecheck = md5str(_H1 + ':' + _nonce + ':' + _nc + ':' + _cnonce + F(":auth:") + _H2);
+---
+>       if(authReq.indexOf("qop=auth") != -1 || authReq.indexOf("qop=\"auth\"") != -1) {
+>           _responsecheck = md5str(_H1 + ':' + _nonce + ':' + _nc + ':' + _cnonce + F(":auth:") + _H2);
+>       } else {
+>           _responsecheck = md5str(_H1 + ':' + _nonce + ':' + _H2);
+483,489c448,449
+<       else
+<       {
+<         _responsecheck = md5str(_H1 + ':' + _nonce + ':' + _H2);
+<       }
+<       ESP_LOGD(PH_TAG, "The Proper response=%s", _responsecheck);
+<       if (_resp == _responsecheck)
+<       {
+---
+>       ESP_LOGD(PH_TAG, "The Proper response=%s", _responsecheck.c_str());
+>       if(_resp == _responsecheck){
+499c459
+< const String PsychicRequest::_extractParam(const String &authReq, const String &param, const char delimit)
+---
+> const String PsychicRequest::_extractParam(const String& authReq, const String& param, const char delimit)
+504c464
+<   return authReq.substring(_begin + param.length(), authReq.indexOf(delimit, _begin + param.length()));
+---
+>   return authReq.substring(_begin+param.length(),authReq.indexOf(delimit,_begin+param.length()));
+509c469
+<   char buffer[33]; // buffer to hold 32 Hex Digit + /0
+---
+>   char buffer[33];  // buffer to hold 32 Hex Digit + /0
+511,513c471,472
+<   for (i = 0; i < 4; i++)
+<   {
+<     sprintf(buffer + (i * 8), "%08lx", esp_random());
+---
+>   for(i = 0; i < 4; i++) {
+>     sprintf (buffer + (i*8), "%08lx", (unsigned long int)esp_random());
+518c477
+< esp_err_t PsychicRequest::requestAuthentication(HTTPAuthMethod mode, const char *realm, const char *authFailMsg)
+---
+> esp_err_t PsychicRequest::requestAuthentication(HTTPAuthMethod mode, const char* realm, const char* authFailMsg)
+520,521c479,480
+<   // what is thy realm, sire?
+<   if (!strcmp(realm, ""))
+---
+>   //what is thy realm, sire?
+>   if(!strcmp(realm, ""))
+529,530c488,489
+<   // what kind of auth?
+<   if (mode == BASIC_AUTH)
+---
+>   //what kind of auth?
+>   if(mode == BASIC_AUTH)
+537c496
+<     // only make new ones if we havent sent them yet
+---
+>     //only make new ones if we havent sent them yet
+539c498
+<       this->setSessionKey("nonce", _getRandomHexString());
+---
+>       this->setSessionKey("nonce", _getRandomHexString());    
+547c506
+<   // DUMP(authStr);
+---
+>   //DUMP(authStr);
+diff lib/PsychicHttp/src/PsychicResponse.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicResponse.cpp
+130a131,138
+> 
+>   // clean up our header variables after send
+>   for (HTTPHeader header : _headers)
+>   {
+>     free(header.field);
+>     free(header.value);
+>   }
+>   _headers.clear();
+diff lib/PsychicHttp/src/PsychicStreamResponse.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicStreamResponse.cpp
+19c19
+<   snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", name);
+---
+>   snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", name.c_str());
+diff lib/PsychicHttp/src/PsychicUploadHandler.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicUploadHandler.cpp
+31c31
+< 
+---
+>   _parsedLength = 0;
+39c39
+<     sprintf(error, "File size must be less than %u bytes!", request->server()->maxUploadSize);
+---
+>     sprintf(error, "File size must be less than %lu bytes!", request->server()->maxUploadSize);
+395c395
+< }
+\ No newline at end of file
+---
+> }
+diff lib/PsychicHttp/src/PsychicWebHandler.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicWebHandler.cpp
+29c29
+<     sprintf(error, "Request body must be less than %u bytes!", request->server()->maxRequestBodySize);
+---
+>     sprintf(error, "Request body must be less than %lu bytes!", request->server()->maxRequestBodySize);
+diff lib/PsychicHttp/src/PsychicWebSocket.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/PsychicWebSocket.cpp
+7,8c7,9
+< PsychicWebSocketRequest::PsychicWebSocketRequest(PsychicRequest *req) : PsychicRequest(req->server(), req->request()),
+<                                                                         _client(req->client())
+---
+> PsychicWebSocketRequest::PsychicWebSocketRequest(PsychicRequest *req) :
+>   PsychicRequest(req->server(), req->request()),
+>   _client(req->client())
+16,17c17
+< PsychicWebSocketClient *PsychicWebSocketRequest::client()
+< {
+---
+> PsychicWebSocketClient * PsychicWebSocketRequest::client() {
+21c21
+< esp_err_t PsychicWebSocketRequest::reply(httpd_ws_frame_t *ws_pkt)
+---
+> esp_err_t PsychicWebSocketRequest::reply(httpd_ws_frame_t * ws_pkt)
+24c24
+< }
+---
+> } 
+31c31
+<   ws_pkt.payload = (uint8_t *)data;
+---
+>   ws_pkt.payload = (uint8_t*)data;
+48c48
+<     : PsychicClient(client->server(), client->socket())
+---
+>   : PsychicClient(client->server(), client->socket())
+52,53c52
+< PsychicWebSocketClient::~PsychicWebSocketClient()
+< {
+---
+> PsychicWebSocketClient::~PsychicWebSocketClient() {
+56c55
+< esp_err_t PsychicWebSocketClient::sendMessage(httpd_ws_frame_t *ws_pkt)
+---
+> esp_err_t PsychicWebSocketClient::sendMessage(httpd_ws_frame_t * ws_pkt)
+59c58
+< }
+---
+> } 
+66c65
+<   ws_pkt.payload = (uint8_t *)data;
+---
+>   ws_pkt.payload = (uint8_t*)data;
+78,83c77,83
+< PsychicWebSocketHandler::PsychicWebSocketHandler() : PsychicHandler(),
+<                                                      _onOpen(NULL),
+<                                                      _onFrame(NULL),
+<                                                      _onClose(NULL)
+< {
+< }
+---
+> PsychicWebSocketHandler::PsychicWebSocketHandler() :
+>   PsychicHandler(),
+>   _onOpen(NULL),
+>   _onFrame(NULL),
+>   _onClose(NULL)
+>   {
+>   }
+85,86c85
+< PsychicWebSocketHandler::~PsychicWebSocketHandler()
+< {
+---
+> PsychicWebSocketHandler::~PsychicWebSocketHandler() {
+89c88
+< PsychicWebSocketClient *PsychicWebSocketHandler::getClient(int socket)
+---
+> PsychicWebSocketClient * PsychicWebSocketHandler::getClient(int socket)
+104,105c103
+< PsychicWebSocketClient *PsychicWebSocketHandler::getClient(PsychicClient *client)
+< {
+---
+> PsychicWebSocketClient * PsychicWebSocketHandler::getClient(PsychicClient *client) {
+109,110c107
+< void PsychicWebSocketHandler::addClient(PsychicClient *client)
+< {
+---
+> void PsychicWebSocketHandler::addClient(PsychicClient *client) {
+115,116c112
+< void PsychicWebSocketHandler::removeClient(PsychicClient *client)
+< {
+---
+> void PsychicWebSocketHandler::removeClient(PsychicClient *client) {
+118c114
+<   delete (PsychicWebSocketClient *)client->_friend;
+---
+>   delete (PsychicWebSocketClient*)client->_friend;
+122,123c118
+< void PsychicWebSocketHandler::openCallback(PsychicClient *client)
+< {
+---
+> void PsychicWebSocketHandler::openCallback(PsychicClient *client) {
+135,136c130
+< void PsychicWebSocketHandler::closeCallback(PsychicClient *client)
+< {
+---
+> void PsychicWebSocketHandler::closeCallback(PsychicClient *client) {
+152c146
+<   // lookup our client
+---
+>   //lookup our client
+164c158
+<   // prep our request
+---
+>   //prep our request
+167c161
+<   // init our memory for storing the packet
+---
+>   //init our memory for storing the packet
+175,176c169
+<   if (ret != ESP_OK)
+<   {
+---
+>   if (ret != ESP_OK) {
+181,184c174,176
+<   // okay, now try to load the packet
+<   ESP_LOGV(PH_TAG, "frame len is %d", ws_pkt.len);
+<   if (ws_pkt.len)
+<   {
+---
+>   //okay, now try to load the packet
+>   ESP_LOGI(PH_TAG, "frame len is %d", ws_pkt.len);
+>   if (ws_pkt.len) {
+186,188c178,179
+<     buf = (uint8_t *)calloc(1, ws_pkt.len + 1);
+<     if (buf == NULL)
+<     {
+---
+>     buf = (uint8_t*) calloc(1, ws_pkt.len + 1);
+>     if (buf == NULL) {
+195,196c186
+<     if (ret != ESP_OK)
+<     {
+---
+>     if (ret != ESP_OK) {
+201c191
+<     ESP_LOGV(PH_TAG, "Got packet with message: %s", ws_pkt.payload);
+---
+>     ESP_LOGI(PH_TAG, "Got packet with message: %s", ws_pkt.payload);
+211c201
+<   // logging housekeeping
+---
+>   //logging housekeeping
+214,215c204,205
+<   // ESP_LOGI(PH_TAG, "ws_handler: httpd_handle_t=%p, sockfd=%d, client_info:%d", request->server(),
+<   // httpd_req_to_sockfd(request->request()), httpd_ws_get_fd_info(request->server(), httpd_req_to_sockfd(request->request())));
+---
+>   ESP_LOGI(PH_TAG, "ws_handler: httpd_handle_t=%p, sockfd=%d, client_info:%d", request->server(),
+>     httpd_req_to_sockfd(request->request()), httpd_ws_get_fd_info(request->server(), httpd_req_to_sockfd(request->request())));
+217c207
+<   // dont forget to release our buffer memory
+---
+>   //dont forget to release our buffer memory
+223,224c213
+< PsychicWebSocketHandler *PsychicWebSocketHandler::onOpen(PsychicWebSocketClientCallback fn)
+< {
+---
+> PsychicWebSocketHandler * PsychicWebSocketHandler::onOpen(PsychicWebSocketClientCallback fn) {
+229,230c218
+< PsychicWebSocketHandler *PsychicWebSocketHandler::onFrame(PsychicWebSocketFrameCallback fn)
+< {
+---
+> PsychicWebSocketHandler * PsychicWebSocketHandler::onFrame(PsychicWebSocketFrameCallback fn) {
+235,236c223
+< PsychicWebSocketHandler *PsychicWebSocketHandler::onClose(PsychicWebSocketClientCallback fn)
+< {
+---
+> PsychicWebSocketHandler * PsychicWebSocketHandler::onClose(PsychicWebSocketClientCallback fn) {
+241c228
+< void PsychicWebSocketHandler::sendAll(httpd_ws_frame_t *ws_pkt)
+---
+> void PsychicWebSocketHandler::sendAll(httpd_ws_frame_t * ws_pkt)
+253c240
+<     if (((PsychicWebSocketClient *)client->_friend)->sendMessage(ws_pkt) != ESP_OK)
+---
+>     if (((PsychicWebSocketClient*)client->_friend)->sendMessage(ws_pkt) != ESP_OK)
+263c250
+<   ws_pkt.payload = (uint8_t *)data;
+---
+>   ws_pkt.payload = (uint8_t*)data;
+Only in .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src: TemplatePrinter.cpp
+Only in .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src: TemplatePrinter.h
+diff lib/PsychicHttp/src/async_worker.cpp .pio/libdeps/esp32-s3-devkitc-1/PsychicHttp/src/async_worker.cpp
+169c169
+<     memcpy(async, r, sizeof(httpd_req_t));
+---
+>     memcpy((void *)async, (void *)r, sizeof(httpd_req_t));
