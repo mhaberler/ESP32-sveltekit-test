@@ -44,9 +44,10 @@ LightStateService::LightStateService(PsychicHttpServer *server,
                                                                                            _mqttClient(mqttClient),
                                                                                            _lightMqttSettingsService(lightMqttSettingsService)
 {
+#ifdef LED_BUILTIN
     // configure led to be output
     pinMode(LED_BUILTIN, OUTPUT);
-
+#endif
     // configure MQTT callback
     _mqttClient->onConnect(std::bind(&LightStateService::registerConfig, this));
 
@@ -71,7 +72,9 @@ void LightStateService::begin()
 
 void LightStateService::onConfigUpdated()
 {
+#ifdef LED_BUILTIN
     digitalWrite(LED_BUILTIN, _state.ledOn ? 1 : 0);
+#endif
 }
 
 void LightStateService::registerConfig()
