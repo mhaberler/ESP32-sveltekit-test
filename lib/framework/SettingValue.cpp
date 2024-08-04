@@ -13,6 +13,7 @@
  **/
 
 #include <SettingValue.h>
+#include "esp_mac.h"
 
 namespace SettingValue
 {
