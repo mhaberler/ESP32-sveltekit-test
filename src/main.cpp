@@ -33,6 +33,9 @@ LightStateService lightStateService = LightStateService(&server,
                                                         esp32sveltekit.getMqttClient(),
                                                         &lightMqttSettingsService);
 
+void broker_setup();
+void broker_loop();
+
 void setup()
 {
     // start serial and filesystem
@@ -40,6 +43,8 @@ void setup()
 
     // start ESP32-SvelteKit
     esp32sveltekit.begin();
+
+ broker_setup();
 
     // load the initial light settings
     lightStateService.begin();
@@ -49,6 +54,8 @@ void setup()
 
 void loop()
 {
+    broker_loop();
+    yield();
     // Delete Arduino loop task, as it is not needed in this example
-    vTaskDelete(NULL);
+    // vTaskDelete(NULL);
 }
