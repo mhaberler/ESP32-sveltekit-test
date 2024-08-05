@@ -15,6 +15,7 @@
 #include <MqttSettingsService.h>
 
 extern const uint8_t rootca_crt_bundle_start[] asm("_binary_src_certs_x509_crt_bundle_bin_start");
+extern const uint8_t rootca_crt_bundle_end[] asm("_binary_src_certs_x509_crt_bundle_bin_end");
 
 /**
  * Retains a copy of the cstr provided in the pointer provided using dynamic allocation.
@@ -56,7 +57,7 @@ MqttSettingsService::MqttSettingsService(PsychicHttpServer *server,
                      { onConfigUpdated(); },
                      false);
 
-    _mqttClient.setCACertBundle(rootca_crt_bundle_start);
+    _mqttClient.setCACertBundle(rootca_crt_bundle_start, rootca_crt_bundle_end - rootca_crt_bundle_start);
 }
 
 MqttSettingsService::~MqttSettingsService()
