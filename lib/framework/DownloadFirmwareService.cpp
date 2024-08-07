@@ -12,6 +12,7 @@
  **/
 
 #include <DownloadFirmwareService.h>
+#include <Esp.h>
 
 extern const uint8_t rootca_crt_bundle_start[] asm("_binary_src_certs_x509_crt_bundle_bin_start");
 extern const uint8_t rootca_crt_bundle_end[] asm("_binary_src_certs_x509_crt_bundle_bin_end");
@@ -60,7 +61,7 @@ void updateTask(void *param)
     client.setTimeout(10);
 
     httpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-    httpUpdate.rebootOnUpdate(true);
+    // httpUpdate.rebootOnUpdate(true);
 
     String url = *((String *)param);
     String output;
@@ -102,6 +103,7 @@ void updateTask(void *param)
 #ifdef SERIAL_INFO
         Serial.println("HTTP Update successful - Restarting");
 #endif
+        ESP.restart();
         break;
     }
     vTaskDelete(NULL);
