@@ -20,17 +20,20 @@ static EventSocket *_socket = nullptr;
 static int previousProgress = 0;
 JsonDocument doc;
 
-void update_started() {
+void update_started()
+{
     String output;
     doc["status"] = "preparing";
     JsonObject jsonObject = doc.as<JsonObject>();
     _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
 }
 
-void update_progress(int currentBytes, int totalBytes) {
+void update_progress(int currentBytes, int totalBytes)
+{
     doc["status"] = "progress";
     int progress = ((currentBytes * 100) / totalBytes);
-    if (progress > previousProgress) {
+    if (progress > previousProgress)
+    {
         doc["progress"] = progress;
         JsonObject jsonObject = doc.as<JsonObject>();
         _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
@@ -39,7 +42,8 @@ void update_progress(int currentBytes, int totalBytes) {
     previousProgress = progress;
 }
 
-void update_finished() {
+void update_finished()
+{
     doc["status"] = "finished";
     JsonObject jsonObject = doc.as<JsonObject>();
     _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
@@ -48,39 +52,18 @@ void update_finished() {
     vTaskDelay(100 / portTICK_PERIOD_MS);
 }
 
-void _update_started() {
-    log_i("CALLBACK:  HTTP update process started");
-}
-
-void _update_finished() {
-    log_i("CALLBACK:  HTTP update process finished");
-}
-
-void _update_progress(int cur, int total) {
-    log_i("CALLBACK:  HTTP update process at %d of %d bytes...", cur, total);
-}
-
-void _update_error(int err) {
-    log_i("CALLBACK:  HTTP update fatal error code %d", err);
-}
-
-void updateTask(void *param) {
+void updateTask(void *param)
+{
     NetworkClientSecure client;
     // client.setCACertBundle(rootca_crt_bundle_start, rootca_crt_bundle_end - rootca_crt_bundle_start);
     client.setInsecure();  //skip verification
     client.setTimeout(10);
 
     httpUpdate.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-    httpUpdate.rebootOnUpdate(false);
+    httpUpdate.rebootOnUpdate(true);
 
     String url = *((String *)param);
     String output;
-
-    httpUpdate.onStart(_update_started);
-    httpUpdate.onEnd(_update_finished);
-    httpUpdate.onProgress(_update_progress);
-    httpUpdate.onError(_update_error);
-
     // httpUpdate.onStart(update_started);
     // httpUpdate.onProgress(update_progress);
     // httpUpdate.onEnd(update_finished);
@@ -88,49 +71,52 @@ void updateTask(void *param) {
     t_httpUpdate_return ret = httpUpdate.update(client, url.c_str());
     JsonObject jsonObject;
 
-    switch (ret) {
-        case HTTP_UPDATE_FAILED:
+    switch (ret)
+    {
+    case HTTP_UPDATE_FAILED:
 
-            doc["status"] = "error";
-            doc["error"] = httpUpdate.getLastErrorString().c_str();
-            jsonObject = doc.as<JsonObject>();
-            _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
+        doc["status"] = "error";
+        doc["error"] = httpUpdate.getLastErrorString().c_str();
+        jsonObject = doc.as<JsonObject>();
+        _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
 
-            ESP_LOGE("Download OTA", "HTTP Update failed with error (%d): %s", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+        ESP_LOGE("Download OTA", "HTTP Update failed with error (%d): %s", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 #ifdef SERIAL_INFO
-            Serial.printf("HTTP Update failed with error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+        Serial.printf("HTTP Update failed with error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 #endif
-            break;
-        case HTTP_UPDATE_NO_UPDATES:
+        break;
+    case HTTP_UPDATE_NO_UPDATES:
 
-            doc["status"] = "error";
-            doc["error"] = "Update failed, has same firmware version";
-            jsonObject = doc.as<JsonObject>();
-            _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
+        doc["status"] = "error";
+        doc["error"] = "Update failed, has same firmware version";
+        jsonObject = doc.as<JsonObject>();
+        _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
 
-            ESP_LOGE("Download OTA", "HTTP Update failed, has same firmware version");
+        ESP_LOGE("Download OTA", "HTTP Update failed, has same firmware version");
 #ifdef SERIAL_INFO
-            Serial.println("HTTP Update failed, has same firmware version");
+        Serial.println("HTTP Update failed, has same firmware version");
 #endif
-            break;
-        case HTTP_UPDATE_OK:
-            ESP_LOGI("Download OTA", "HTTP Update successful - Restarting");
+        break;
+    case HTTP_UPDATE_OK:
+        ESP_LOGI("Download OTA", "HTTP Update successful - Restarting");
 #ifdef SERIAL_INFO
-            Serial.println("HTTP Update successful - Restarting");
+        Serial.println("HTTP Update successful - Restarting");
 #endif
-            break;
+        break;
     }
     vTaskDelete(NULL);
 }
 
 DownloadFirmwareService::DownloadFirmwareService(PsychicHttpServer *server,
-        SecurityManager *securityManager,
-        EventSocket *socket) : _server(server),
-    _securityManager(securityManager),
-    _socket(socket) {
+                                                 SecurityManager *securityManager,
+                                                 EventSocket *socket) : _server(server),
+                                                                        _securityManager(securityManager),
+                                                                        _socket(socket)
+{
 }
 
-void DownloadFirmwareService::begin() {
+void DownloadFirmwareService::begin()
+{
     _socket->registerEvent(EVENT_DOWNLOAD_OTA);
 
     _server->on(GITHUB_FIRMWARE_PATH,
@@ -142,8 +128,10 @@ void DownloadFirmwareService::begin() {
     ESP_LOGV("DownloadFirmwareService", "Registered POST endpoint: %s", GITHUB_FIRMWARE_PATH);
 }
 
-esp_err_t DownloadFirmwareService::downloadUpdate(PsychicRequest *request, JsonVariant &json) {
-    if (!json.is<JsonObject>()) {
+esp_err_t DownloadFirmwareService::downloadUpdate(PsychicRequest *request, JsonVariant &json)
+{
+    if (!json.is<JsonObject>())
+    {
         return request->reply(400);
     }
 
@@ -161,14 +149,15 @@ esp_err_t DownloadFirmwareService::downloadUpdate(PsychicRequest *request, JsonV
     _socket->emitEvent(EVENT_DOWNLOAD_OTA, jsonObject);
 
     if (xTaskCreatePinnedToCore(
-                &updateTask,                // Function that should be called
-                "Update",                   // Name of the task (for debugging)
-                OTA_TASK_STACK_SIZE,        // Stack size (bytes)
-                &downloadURL,               // Pass reference to this class instance
-                (configMAX_PRIORITIES - 1), // Pretty high task priority
-                NULL,                       // Task handle
-                1                           // Have it on application core
-            ) != pdPASS) {
+            &updateTask,                // Function that should be called
+            "Update",                   // Name of the task (for debugging)
+            OTA_TASK_STACK_SIZE,        // Stack size (bytes)
+            &downloadURL,               // Pass reference to this class instance
+            (configMAX_PRIORITIES - 1), // Pretty high task priority
+            NULL,                       // Task handle
+            1                           // Have it on application core
+            ) != pdPASS)
+    {
         ESP_LOGE("Download OTA", "Couldn't create download OTA task");
         return request->reply(500);
     }
