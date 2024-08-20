@@ -48,7 +48,7 @@ void setup() {
     // start ESP32-SvelteKit
     esp32sveltekit.begin();
 
-    broker_setup();
+    // broker_setup();
 
     // load the initial light settings
     lightStateService.begin();
@@ -61,7 +61,7 @@ void setup() {
 }
 
 void loop() {
-    broker_loop();
+    // broker_loop();
     yield();
     // Delete Arduino loop task, as it is not needed in this example
     // vTaskDelete(NULL);

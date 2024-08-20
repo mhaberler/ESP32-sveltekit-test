@@ -40,6 +40,25 @@ void broker_setup() {
 
     websocket_handler.setSubprotocol("mqtt");
 
+    // //how to do basic auth
+    // // curl -i --user admin:admin http://psychic.local/auth-basic
+    // server.on("/auth-basic", HTTP_GET, [](PsychicRequest *request)
+    // {
+    //   if (!request->authenticate(app_user, app_pass))
+    //     return request->requestAuthentication(BASIC_AUTH, app_name, "You must log in.");
+    //   return request->reply("Auth Basic Success!");
+    // });
+
+    // //how to do digest auth
+    // // curl -i --user admin:admin http://psychic.local/auth-digest
+    // server.on("/auth-digest", HTTP_GET, [](PsychicRequest *request)
+    // {
+    //   if (!request->authenticate(app_user, app_pass))
+    //     return request->requestAuthentication(DIGEST_AUTH, app_name, "You must log in.");
+    //   return request->reply("Auth Digest Success!");
+    // });
+
+
     httpsServer.on("/mqtt", &websocket_handler);
     httpsServer.on("/hello", [](PsychicRequest * request) {
         return request->reply(200, "text/plain", "Hello world!");
