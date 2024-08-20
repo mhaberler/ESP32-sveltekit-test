@@ -104,6 +104,15 @@ void ESP32SvelteKit::begin()
         _server->ssl_config.httpd.max_uri_handlers = _numberEndpoints;
         _server->ssl_config.httpd.max_open_sockets = HTTPD_MAX_OPEN_SOCKETS;
         _server->listen(HTTPS_PORT, _server_cert.c_str(), _server_key.c_str());
+#if REDIRECT_HTTP_TO_HTTPS
+        _redirectServer = new PsychicHttpServer();
+        _redirectServer->config.ctrl_port = 20420; // just a random port different from the default one
+        _redirectServer->listen(80);
+        _redirectServer->onNotFound([](PsychicRequest *request) {
+            String url = "https://" + request->host() + request->url();
+            return request->redirect(url.c_str());
+        });
+#endif
     } else {
         ESP_LOGV("ESP32SvelteKit", "starting HTTP service on port %d", HTTP_PORT);
         _server->config.max_uri_handlers = _numberEndpoints;

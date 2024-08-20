@@ -1,5 +1,22 @@
 #pragma once
 
+
+#ifndef CORS_ORIGIN
+#define CORS_ORIGIN "*"
+#endif
+
+#ifndef APP_VERSION
+#define APP_VERSION "demo"
+#endif
+
+#ifndef APP_NAME
+#define APP_NAME "ESP32 SvelteKit Demo"
+#endif
+
+#ifndef ESP32SVELTEKIT_RUNNING_CORE
+#define ESP32SVELTEKIT_RUNNING_CORE -1
+#endif
+
 #ifndef HTTPD_MAX_OPEN_SOCKETS
 #define HTTPD_MAX_OPEN_SOCKETS 12
 #endif
@@ -22,4 +39,8 @@
 
 #ifndef MBEDTLS_IN_PSRAM
 #define MBEDTLS_IN_PSRAM 1
+#endif
+
+#ifndef REDIRECT_HTTP_TO_HTTPS
+#define REDIRECT_HTTP_TO_HTTPS 1
 #endif

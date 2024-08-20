@@ -43,26 +43,10 @@
 #include <WiFiStatus.h>
 #include <ESPFS.h>
 #include <PsychicHttpsServer.h>
-#include <Tunable.h>
+#include <skconfig.h>
 
 #ifdef EMBED_WWW
 #include <WWWData.h>
-#endif
-
-#ifndef CORS_ORIGIN
-#define CORS_ORIGIN "*"
-#endif
-
-#ifndef APP_VERSION
-#define APP_VERSION "demo"
-#endif
-
-#ifndef APP_NAME
-#define APP_NAME "ESP32 SvelteKit Demo"
-#endif
-
-#ifndef ESP32SVELTEKIT_RUNNING_CORE
-#define ESP32SVELTEKIT_RUNNING_CORE -1
 #endif
 
 class ESP32SvelteKit
@@ -169,6 +153,7 @@ public:
 
 private:
     PsychicHttpsServer *_server;
+    PsychicHttpServer *_redirectServer;
     unsigned int _numberEndpoints;
     FeaturesService _featureService;
     SecuritySettingsService _securitySettingsService;
