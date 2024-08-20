@@ -38,6 +38,24 @@ void setup()
     // start serial and filesystem
     Serial.begin(SERIAL_BAUD_RATE);
 
+#ifdef EXTMEM_LIMIT
+    // a noop if no PSRAM available so ok to leave in
+    // with one MQTT-ws client connected:
+    // EXTMEM_LIMIT free_heap 
+    // undefined    206384
+    // 64           233744
+    // 128          232564
+    // 256          215480
+    // 512          213172
+    // 1024         210056
+    heap_caps_malloc_extmem_enable(EXTMEM_LIMIT);
+#endif
+
+#ifdef BUILTIN_RGBLED_PIN
+    pinMode(BUILTIN_RGBLED_PIN, OUTPUT);
+    neopixelWrite(BUILTIN_RGBLED_PIN, 0, 255, 0);
+#endif
+
     // start ESP32-SvelteKit
     esp32sveltekit.begin();
 
