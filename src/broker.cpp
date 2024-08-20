@@ -1,7 +1,5 @@
 
 #include <LittleFS.h>
-#define CONFIG_ESP_HTTPS_SERVER_ENABLE 1
-
 #include <ESP32SvelteKit.h>
 #include <PicoMQTT.h>
 #include <PicoMQTT.h>

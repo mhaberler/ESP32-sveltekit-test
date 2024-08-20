@@ -15,11 +15,10 @@
 #include <ESP32SvelteKit.h>
 #include <LightMqttSettingsService.h>
 #include <LightStateService.h>
-#include <PsychicHttpServer.h>
 
 #define SERIAL_BAUD_RATE 115200
 
-PsychicHttpServer server;
+PsychicHttpsServer server;
 
 ESP32SvelteKit esp32sveltekit(&server, 120);
 
@@ -37,21 +36,10 @@ void broker_setup(ESP32SvelteKit &sk);
 void broker_loop();
 
 void setup() {
+    delay(3000);
+    
     // start serial and filesystem
     Serial.begin(SERIAL_BAUD_RATE);
-
-#ifdef EXTMEM_LIMIT
-    // a noop if no PSRAM available so ok to leave in
-    // with one MQTT-ws client connected:
-    // EXTMEM_LIMIT free_heap 
-    // undefined    206384
-    // 64           233744
-    // 128          232564
-    // 256          215480
-    // 512          213172
-    // 1024         210056
-    heap_caps_malloc_extmem_enable(EXTMEM_LIMIT);
-#endif
 
 #ifdef BUILTIN_RGBLED_PIN
     pinMode(BUILTIN_RGBLED_PIN, OUTPUT);
