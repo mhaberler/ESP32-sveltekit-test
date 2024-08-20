@@ -42,7 +42,8 @@
 #include <WiFiSettingsService.h>
 #include <WiFiStatus.h>
 #include <ESPFS.h>
-#include <PsychicHttp.h>
+#include <PsychicHttpsServer.h>
+#include <Tunable.h>
 
 #ifdef EMBED_WWW
 #include <WWWData.h>
@@ -67,7 +68,7 @@
 class ESP32SvelteKit
 {
 public:
-    ESP32SvelteKit(PsychicHttpServer *server, unsigned int numberEndpoints = 115);
+    ESP32SvelteKit(PsychicHttpsServer *server, unsigned int numberEndpoints = 115);
 
     void begin();
 
@@ -76,7 +77,7 @@ public:
         return &ESPFS;
     }
 
-    PsychicHttpServer *getServer()
+    PsychicHttpsServer *getServer()
     {
         return _server;
     }
@@ -167,7 +168,7 @@ public:
     }
 
 private:
-    PsychicHttpServer *_server;
+    PsychicHttpsServer *_server;
     unsigned int _numberEndpoints;
     FeaturesService _featureService;
     SecuritySettingsService _securitySettingsService;
@@ -209,7 +210,9 @@ private:
     SystemStatus _systemStatus;
 
     String _appName = APP_NAME;
-
+    bool _use_ssl = false;
+    String _server_cert = "";
+    String _server_key = "";
 protected:
     static void _loopImpl(void *_this) { static_cast<ESP32SvelteKit *>(_this)->_loop(); }
     void _loop();

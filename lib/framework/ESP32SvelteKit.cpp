@@ -14,7 +14,7 @@
 
 #include <ESP32SvelteKit.h>
 
-ESP32SvelteKit::ESP32SvelteKit(PsychicHttpServer *server, unsigned int numberEndpoints) : _server(server),
+ESP32SvelteKit::ESP32SvelteKit(PsychicHttpsServer *server, unsigned int numberEndpoints) : _server(server),
                                                                                           _numberEndpoints(numberEndpoints),
                                                                                           _featureService(server),
                                                                                           _securitySettingsService(server, &ESPFS),
@@ -59,6 +59,19 @@ ESP32SvelteKit::ESP32SvelteKit(PsychicHttpServer *server, unsigned int numberEnd
 
 void ESP32SvelteKit::begin()
 {
+#ifdef EXTMEM_LIMIT
+    // a noop if no PSRAM available so ok to leave in
+    // with one MQTT-ws client connected:
+    // EXTMEM_LIMIT free_heap 
+    // undefined    206384
+    // 64           233744
+    // 128          232564
+    // 256          215480
+    // 512          213172
+    // 1024         210056
+    heap_caps_malloc_extmem_enable(EXTMEM_LIMIT);
+#endif
+
     ESP_LOGV("ESP32SvelteKit", "Loading settings from files system");
     ESPFS.begin(true);
 
@@ -66,8 +79,37 @@ void ESP32SvelteKit::begin()
 
     // SvelteKit uses a lot of handlers, so we need to increase the max_uri_handlers
     // WWWData has 77 Endpoints, Framework has 27, and Lighstate Demo has 4
-    _server->config.max_uri_handlers = _numberEndpoints;
-    _server->listen(80);
+    #ifdef HTTPD_STACK_SIZE
+        _server->config.stack_size = HTTPD_STACK_SIZE;
+    #endif
+    {
+        File fp = ESPFS.open("/server.crt");
+        if (fp) {
+            _server_cert = fp.readString();
+            fp.close();
+        } else {
+            ESP_LOGI("ESP32SvelteKit", "/server.crt not found");
+        }
+        fp = ESPFS.open("/server.key");
+        if (fp) {
+            _server_key = fp.readString();
+            fp.close();
+        } else {
+            ESP_LOGI("ESP32SvelteKit", "/server.key not found");
+        }
+    }
+    _use_ssl = _server_cert.length() && _server_key.length();
+    if (_use_ssl) {
+        ESP_LOGV("ESP32SvelteKit", "starting HTTPS service on port %d", HTTPS_PORT);
+        _server->ssl_config.httpd.max_uri_handlers = _numberEndpoints;
+        _server->ssl_config.httpd.max_open_sockets = HTTPD_MAX_OPEN_SOCKETS;
+        _server->listen(HTTPS_PORT, _server_cert.c_str(), _server_key.c_str());
+    } else {
+        ESP_LOGV("ESP32SvelteKit", "starting HTTP service on port %d", HTTP_PORT);
+        _server->config.max_uri_handlers = _numberEndpoints;
+        _server->config.max_open_sockets = HTTPD_MAX_OPEN_SOCKETS;
+        _server->listen(HTTP_PORT);
+    }
 
 #ifdef EMBED_WWW
     // Serve static resources from PROGMEM
