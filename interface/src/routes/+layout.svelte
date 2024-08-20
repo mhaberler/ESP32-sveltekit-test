@@ -28,7 +28,8 @@
 		}
 		const ws_token = $page.data.features.security ? '?access_token=' + $user.bearer_token : '';
 		socket.init(
-			`ws://${window.location.host}/ws/events${ws_token}`,
+			(location.protocol === "https:" ? "wss://" : "ws://") +
+				`${window.location.host}/ws/events${ws_token}`,
 			$page.data.features.event_use_json
 		);
 
