@@ -12,6 +12,8 @@
 #include <sdkconfig.h>
 #include "esp_mem.h"
 
+// NB it is important this file is linked before libraries
+// keep near main.cpp or it may not work as expected
 
 IRAM_ATTR void *esp_mbedtls_mem_calloc(size_t n, size_t size)
 {
