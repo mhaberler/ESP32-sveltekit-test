@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - main
+  workflow_dispatch: # Allow manual invocations of this workflow
 permissions:
   contents: write
 jobs:

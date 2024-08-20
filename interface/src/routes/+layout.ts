@@ -10,7 +10,7 @@ export const load = (async ({ fetch }) => {
 	return {
 		features: item,
 		title: 'ESP32-SvelteKit',
-		github: 'theelims/ESP32-sveltekit',
+		github: 'mhaberler/ESP32-sveltekit-test',
 		copyright: '2024 theelims',
 		appName: 'ESP32 SvelteKit'
 	};

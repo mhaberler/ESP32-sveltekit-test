@@ -13,6 +13,7 @@
  **/
 
 #include <WiFiSettingsService.h>
+#include "esp_mac.h"
 
 WiFiSettingsService::WiFiSettingsService(PsychicHttpServer *server,
                                          FS *fs,

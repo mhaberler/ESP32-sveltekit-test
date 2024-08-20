@@ -15,6 +15,7 @@
 #include <MqttSettingsService.h>
 
 extern const uint8_t rootca_crt_bundle_start[] asm("_binary_src_certs_x509_crt_bundle_bin_start");
+extern const uint8_t rootca_crt_bundle_end[] asm("_binary_src_certs_x509_crt_bundle_bin_end");
 
 /**
  * Retains a copy of the cstr provided in the pointer provided using dynamic allocation.
@@ -56,7 +57,7 @@ MqttSettingsService::MqttSettingsService(PsychicHttpServer *server,
                      { onConfigUpdated(); },
                      false);
 
-    _mqttClient.setCACertBundle(rootca_crt_bundle_start);
+    _mqttClient.setCACertBundle(rootca_crt_bundle_start, rootca_crt_bundle_end - rootca_crt_bundle_start);
 }
 
 MqttSettingsService::~MqttSettingsService()
@@ -118,9 +119,9 @@ String MqttSettingsService::getLastError()
 
 void MqttSettingsService::onMqttConnect(bool sessionPresent)
 {
-    ESP_LOGI("MQTT", "Connected to MQTT: %s", _mqttClient.getMqttConfig()->uri);
+    ESP_LOGI("MQTT", "Connected to MQTT: %s", _mqttClient.getMqttConfig()->broker.address.uri);
 #ifdef SERIAL_INFO
-    Serial.printf("Connected to MQTT: %s\n", _mqttClient.getMqttConfig()->uri);
+    Serial.printf("Connected to MQTT: %s\n", _mqttClient.getMqttConfig()->broker.address.uri);
 #endif
     _lastError = "None";
 }
