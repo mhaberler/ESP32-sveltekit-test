@@ -14,6 +14,21 @@
 
 #include <ESP32SvelteKit.h>
 
+#if MBEDTLS_IN_PSRAM
+#include <esp_attr.h>
+#include <esp_heap_caps.h>
+#include <sdkconfig.h>
+#include "esp_mem.h"
+
+void *svk_mbedtls_mem_calloc(size_t n, size_t size) {
+    return heap_caps_calloc(n, size, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+}
+
+void svk_mbedtls_mem_free(void *ptr) {
+    return heap_caps_free(ptr);
+}
+#endif
+
 ESP32SvelteKit::ESP32SvelteKit(PsychicHttpsServer *server, unsigned int numberEndpoints) : _server(server),
                                                                                           _numberEndpoints(numberEndpoints),
                                                                                           _featureService(server),
@@ -57,6 +72,7 @@ ESP32SvelteKit::ESP32SvelteKit(PsychicHttpsServer *server, unsigned int numberEn
 {
 }
 
+
 void ESP32SvelteKit::begin()
 {
 #ifdef EXTMEM_LIMIT
@@ -70,6 +86,9 @@ void ESP32SvelteKit::begin()
     // 512          213172
     // 1024         210056
     heap_caps_malloc_extmem_enable(EXTMEM_LIMIT);
+#endif
+#if MBEDTLS_IN_PSRAM
+    mbedtls_platform_set_calloc_free(svk_mbedtls_mem_calloc, svk_mbedtls_mem_free);
 #endif
 
     ESP_LOGV("ESP32SvelteKit", "Loading settings from files system");
@@ -178,8 +197,13 @@ void ESP32SvelteKit::begin()
     ESP_LOGV("ESP32SvelteKit", "Starting MDNS");
     MDNS.begin(_wifiSettingsService.getHostname().c_str());
     MDNS.setInstanceName(_appName);
-    MDNS.addService("http", "tcp", 80);
-    MDNS.addService("ws", "tcp", 80);
+    if (_use_ssl) {
+        MDNS.addService("https", "tcp", HTTPS_PORT);
+        MDNS.addService("wss", "tcp", HTTPS_PORT);
+    } else {
+        MDNS.addService("http", "tcp", HTTP_PORT);
+        MDNS.addService("ws", "tcp", HTTP_PORT);
+    }
     MDNS.addServiceTxt("http", "tcp", "Firmware Version", APP_VERSION);
 
 #ifdef SERIAL_INFO

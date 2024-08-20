@@ -27,6 +27,11 @@ void broker_setup(ESP32SvelteKit &sk) {
     sk.getServer()->on("/mqtt", &websocket_handler);
 
     mqtt.begin();
+    if (sk.usesSSL()) {
+        MDNS.addService("mqtt-wss", "tcp", HTTPS_PORT);
+    } else {
+        MDNS.addService("mqtt-ws", "tcp", HTTP_PORT);
+    }
 }
 
 void analytics(void) {

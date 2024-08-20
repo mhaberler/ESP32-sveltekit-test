@@ -43,22 +43,75 @@
 #include <WiFiStatus.h>
 #include <ESPFS.h>
 #include <PsychicHttpsServer.h>
-#include <skconfig.h>
 
 #ifdef EMBED_WWW
 #include <WWWData.h>
 #endif
 
+#ifndef CORS_ORIGIN
+#define CORS_ORIGIN "*"
+#endif
+
+#ifndef APP_VERSION
+#define APP_VERSION "demo"
+#endif
+
+#ifndef APP_NAME
+#define APP_NAME "ESP32 SvelteKit Demo"
+#endif
+
+#ifndef ESP32SVELTEKIT_RUNNING_CORE
+#define ESP32SVELTEKIT_RUNNING_CORE -1
+#endif
+
+#ifndef HTTPD_MAX_OPEN_SOCKETS
+#define HTTPD_MAX_OPEN_SOCKETS 12
+#endif
+
+#ifndef HTTPD_STACK_SIZE
+#define HTTPD_STACK_SIZE 8192
+#endif
+
+#ifndef EXTMEM_LIMIT
+#define EXTMEM_LIMIT 128
+#endif
+
+#ifndef HTTP_PORT
+#define HTTP_PORT 80
+#endif
+
+#ifndef HTTPS_PORT
+#define HTTPS_PORT 443
+#endif
+
+#ifndef MBEDTLS_IN_PSRAM
+#define MBEDTLS_IN_PSRAM 1
+#endif
+
+#ifndef REDIRECT_HTTP_TO_HTTPS
+#define REDIRECT_HTTP_TO_HTTPS 1
+#endif
+
+#ifndef NUM_ENDPOINTS
+#define NUM_ENDPOINTS 115
+#endif
+
+
 class ESP32SvelteKit
 {
 public:
-    ESP32SvelteKit(PsychicHttpsServer *server, unsigned int numberEndpoints = 115);
+    ESP32SvelteKit(PsychicHttpsServer *server, unsigned int numberEndpoints = NUM_ENDPOINTS);
 
     void begin();
 
     FS *getFS()
     {
         return &ESPFS;
+    }
+
+    bool usesSSL()
+    {
+        return _use_ssl;
     }
 
     PsychicHttpsServer *getServer()
