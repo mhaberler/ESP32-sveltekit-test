@@ -235,7 +235,7 @@
 					<div>
 						<div class="font-bold">PSRAM (Size / Free)</div>
 						<div class="text-sm opacity-75">
-							{systemInformation.psram_size.toLocaleString('en-US')} / {systemInformation.psram_size.toLocaleString(
+							{systemInformation.psram_size.toLocaleString('en-US')} / {systemInformation.free_psram.toLocaleString(
 								'en-US'
 							)} bytes
 						</div>
